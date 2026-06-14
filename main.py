@@ -8,6 +8,13 @@ from schemas import PostCreate, PostResponse
 
 # from fastapi.responses import HTMLResponse
 
+# DATA FLOW
+# REQUEST COMES
+# PYDANTIC VALIDATES IT
+# SQLALCHEMY STORES OR RETRIEVES THE DATA
+# PYDANTIC FORMATS THE DATA
+# RESPONSE GOES OUT
+
 
 app = FastAPI()
 
