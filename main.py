@@ -100,7 +100,7 @@ def user_posts_page(request : Request, user_id : int, db:Annotated[Session, Depe
 )
 def create_user(user: UserCreate, db:Annotated[Session, Depends(get_db)]):
     result = db.execute(
-        select(models.user).where(models.User.username == user.username)
+        select(models.User).where(models.User.username == user.username)
         )
     
     existing_user = result.scalars().first()
@@ -111,7 +111,7 @@ def create_user(user: UserCreate, db:Annotated[Session, Depends(get_db)]):
         )
     
     result = db.execute(
-        select(models.user).where(models.User.email == user.email)
+        select(models.User).where(models.User.email == user.email)
         )
     
     existing_email = result.scalars().first()
@@ -132,10 +132,10 @@ def create_user(user: UserCreate, db:Annotated[Session, Depends(get_db)]):
 
     return new_user
 
-@app.get("api/users/{user_id}", response_model=UserResponse)
+@app.get("/api/users/{user_id}", response_model=UserResponse)
 def get_user(user_id : int, db:Annotated[Session, Depends(get_db)]):
     result = db.execute(
-        select(models.user).where(models.User.id == user_id)
+        select(models.User).where(models.User.id == user_id)
         )
     user = result.scalars().first()
 
@@ -147,7 +147,7 @@ def get_user(user_id : int, db:Annotated[Session, Depends(get_db)]):
         detail="User not found"
     )
 
-@app.get("api/users/{user_id}/posts", response_model=list[PostResponse])
+@app.get("/api/users/{user_id}/posts", response_model=list[PostResponse])
 def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.User).where(models.User.id == user_id))
     user = result.scalars().first()
