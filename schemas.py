@@ -23,6 +23,10 @@ class PostBase(BaseModel):
 class PostCreate(PostBase):
     user_id: int  #TEMPORARY
 
+class PostUpdate(BaseModel):
+    title : str | None= Field(min_length=1, max_length=100)
+    content : str | None = Field(min_length=1)
+
 class PostResponse(PostBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -30,4 +34,3 @@ class PostResponse(PostBase):
     user_id: int
     date_posted: datetime
     author : UserResponse
-

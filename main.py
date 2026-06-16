@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from schemas import PostCreate, PostResponse, UserCreate, UserResponse
+from schemas import PostCreate, PostResponse,PostUpdate, UserCreate, UserResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -193,6 +193,31 @@ def create_post(post: PostCreate, db:Annotated[Session, Depends(get_db)]):
 
     return new_post
 
+@app.put("/api/posts/{post_id}", response_model=PostResponse)
+def update_post_full(post_id : int, post_data : PostCreate, db:Annotated[Session, Depends(get_db)]):
+    result = db.execute(select(models.Post).where(models.Post.id == post_id))
+    post = result.scalars().first()
+    if not post:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+    
+    if post_data.user_id != post.user_id:
+        result = db.execute(select(models.User).where(models.User.id == post_data.user_id))
+        user = result.scalars().first()
+        if not user:
+            raise HTTPException(
+                status_code= status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
+        
+    post.title = post_data.title
+    post.content = post_data.content
+    post.user_id = post_data.user_id
+
+    db.commit()
+    db.refresh(post)
+    return post
+        
+
 @app.get("/api/posts/{post_id}", response_model=PostResponse)
 def get_post(post_id : int, db:Annotated[Session, Depends(get_db)]):
     result = db.execute(select(models.Post).where(models.Post.id == post_id))
@@ -200,6 +225,7 @@ def get_post(post_id : int, db:Annotated[Session, Depends(get_db)]):
     if post:
         return post
     raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
+
 
 # Starlette Exception Handler
 @app.exception_handler(StarletteHTTPException)
