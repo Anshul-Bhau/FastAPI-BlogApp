@@ -147,7 +147,7 @@ def get_user(user_id : int, db:Annotated[Session, Depends(get_db)]):
         detail="User not found"
     )
 
-@app.patch("api/users/{user_id}", response_model=UserResponse)
+@app.patch("/api/users/{user_id}", response_model=UserResponse)
 def update_user(
     user_id : int,
     user_update: UserUpdate,
@@ -213,9 +213,9 @@ def get_user_posts(user_id: int, db: Annotated[Session, Depends(get_db)]):
             detail="User not found"
         )
     
-    result = db.execute(select(models.Post).where(models.user_id == user_id))
+    result = db.execute(select(models.Post).where(models.User.id == user_id))
     posts = result.scalars().first()
-    return posts
+    return user.posts
 
 @app.get("/api/posts", response_model=list[PostResponse])
 def get_posts(db:Annotated[Session, Depends(get_db)]):
