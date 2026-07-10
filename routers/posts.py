@@ -95,8 +95,16 @@ async def update_post_full(
     post.user_id = post_data.user_id
 
     await db.commit()
-    await db.refresh(post, attribute_names=["author"])
-    return post
+
+    result = await db.execute(
+        select(models.Post)
+        .options(selectinload(models.Post.author))
+        .where(models.Post.id == post_id)
+    )
+
+    updated_post = result.scalar_one()
+
+    return updated_post
 
 
 @router.patch("/{post_id}", response_model=PostResponse)
@@ -118,8 +126,16 @@ async def update_post_partial(
         setattr(post, field, value)
 
     await db.commit()
-    await db.refresh(post)
-    return post
+
+    result = await db.execute(
+    select(models.Post)
+    .options(selectinload(models.Post.author))
+    .where(models.Post.id == post_id)
+    )
+
+    updated_post = result.scalar_one()
+
+    return updated_post
 
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
