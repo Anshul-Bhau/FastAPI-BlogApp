@@ -9,7 +9,7 @@ from config import settings
 from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsymcSession
+from sqlalchemy.ext.asyncio import AsyncSession
 
 import models
 from database import get_db
@@ -60,7 +60,7 @@ def verify_access_token(token: str) -> str | None:
 async def get_current_user(
     token : Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> models.user:
+) -> models.User:
     user_id = verify_access_token(token)
     if user_id is None:
         raise HTTPException(
