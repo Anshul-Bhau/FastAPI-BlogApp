@@ -8,7 +8,7 @@ PROFILE_PICS_DIR = Path("media/profile_pics")
 
 
 def process_profile_image(content: bytes) -> str:
-    with ImageOps.exif_transpose(content) as original:
+    with Image.open(BytesIO(content)) as original:
         img = ImageOps.exif_transpose(original)  # Fixes orientation issues
 
         # Resize and crop while maintaining aspect ratio
