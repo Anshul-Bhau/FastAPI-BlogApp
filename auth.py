@@ -64,7 +64,7 @@ async def get_current_user(
     user_id = verify_access_token(token)
     if user_id is None:
         raise HTTPException(
-            status_code = status.HTTP_401_UNUTHORIZED,
+            status_code = status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token",
             headers={"WWW-Authenticate": "Bearer"},
         )
