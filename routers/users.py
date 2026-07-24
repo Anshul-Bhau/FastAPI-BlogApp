@@ -8,7 +8,7 @@ from auth import (create_access_token,
 )
 from config import settings
 
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, Query
 from PIL import UnidentifiedImageError
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,7 +19,7 @@ from image_utils import delete_profile_image, process_profile_image
 
 import models
 from database import get_db
-from schemas import PostResponse, UserCreate, UserPrivate, UserUpdate, UserPublic, Token
+from schemas import PostResponse, UserCreate, UserPrivate, UserUpdate, UserPublic, Token, PaginatedPostsResponse
 
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm
@@ -194,23 +194,48 @@ async def delete_user(user_id: int, current_user: CurrentUser, db: Annotated[Asy
         delete_profile_image(old_filename)
 
 
-@router.get("/{user_id}/posts", response_model=list[PostResponse])
-async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+@router.get("/{user_id}/posts", response_model=PaginatedPostsResponse)
+async def get_user_posts(
+    user_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    skip: Annotated[int, Query(ge=0)] = 0,
+    limit: Annotated[int, Query(ge=1, le=100)] = settings.posts_per_page,
+):
     result = await db.execute(select(models.User).where(models.User.id == user_id))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found",
         )
+
+    count_result = await db.execute(
+        select(func.count())
+        .select_from(models.Post)
+        .where(models.Post.user_id == user_id),
+    )
+    total = count_result.scalar() or 0
 
     result = await db.execute(
         select(models.Post)
         .options(selectinload(models.Post.author))
-        .where(models.User.id == user_id)
+        .where(models.Post.user_id == user_id)
         .order_by(models.Post.date_posted.desc())
-        )
+        .offset(skip)
+        .limit(limit),
+    )
     posts = result.scalars().all()
-    return posts
+
+    has_more = skip + len(posts) < total
+
+    return PaginatedPostsResponse(
+        posts=[PostResponse.model_validate(post) for post in posts],
+        total=total,
+        skip=skip,
+        limit=limit,
+        has_more=has_more,
+    )
+
 
 @router.patch("/{user_id}/picture", response_model=UserPrivate)
 async def upload_profile_picture(
